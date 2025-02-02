@@ -1,6 +1,6 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
+from flask import render_template_string
 from flask import Flask, request, send_file, render_template, jsonify
 import tensorflow as tf
 import numpy as np
@@ -45,7 +45,83 @@ def perform_style_transfer(content_path, style_path):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Neural Style Transfer</title>
+      <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 0; }
+        .container { width: 90%; max-width: 800px; margin: 2rem auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { text-align: center; }
+        form { display: flex; flex-direction: column; gap: 1rem; }
+        label { font-weight: bold; }
+        input[type="file"], input[type="text"] { padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007BFF; color: white; border: none; padding: 0.75rem; font-size: 1rem; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .result { margin-top: 2rem; text-align: center; }
+        .result img { max-width: 100%; border: 2px solid #007BFF; border-radius: 8px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Neural Style Transfer</h1>
+        <form id="uploadForm" action="/style_transfer" method="post" enctype="multipart/form-data">
+          <div>
+            <label for="content_image">Content Image:</label>
+            <input type="file" name="content_image" accept="image/*" required>
+          </div>
+          <div>
+            <label for="style_image">Style Image (Upload):</label>
+            <input type="file" name="style_image" accept="image/*">
+          </div>
+          <div>
+            <label for="style_url">OR Style Image URL:</label>
+            <input type="text" name="style_url" placeholder="Enter style image URL">
+          </div>
+          <button type="submit">Generate Stylized Image</button>
+        </form>
+        <div class="result" id="result">
+          <!-- Generated image and download link will appear here -->
+        </div>
+      </div>
+      <script>
+        document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const styleFile = document.querySelector('input[name="style_image"]').files[0];
+          const styleUrl = document.querySelector('input[name="style_url"]').value.trim();
+          if (!styleFile && styleUrl !== "") {
+            formData.append("style_url", styleUrl);
+          }
+          try {
+            const response = await fetch("/style_transfer", {
+              method: "POST",
+              body: formData
+            });
+            if (!response.ok) {
+              throw new Error("Style transfer failed");
+            }
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            document.getElementById("result").innerHTML = `
+              <h2>Generated Image:</h2>
+              <img src="${imageUrl}" alt="Stylized Image" /><br>
+              <a href="${imageUrl}" download="generated_image.jpg">
+                <button>Download Generated Image</button>
+              </a>
+            `;
+          } catch (error) {
+            document.getElementById("result").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+          }
+        });
+      </script>
+    </body>
+    </html>
+    """
+    return render_template_string(html)
+
 
 @app.route('/style_transfer', methods=['POST'])
 def style_transfer():
