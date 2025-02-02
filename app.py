@@ -7,6 +7,8 @@ import numpy as np
 from PIL import Image
 import tensorflow_hub as hub
 import logging
+tf.config.set_visible_devices([], 'GPU')
+
 
 app = Flask(__name__)
 hub_module = hub.load('https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2')
