@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 def load_and_process_image(image_path):
     logging.info(f"Loading and processing image from {image_path}")
     img = Image.open(image_path).convert("RGB")
-    img = img.resize((512, 512))
+    img = img.resize((256, 256))
     img = np.array(img) / 255.0
     return tf.convert_to_tensor(img, dtype=tf.float32)[tf.newaxis, ...]
 
